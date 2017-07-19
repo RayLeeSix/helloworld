@@ -6,7 +6,7 @@ var lagoonURL = "mqtt://101.200.34.179";
 var logto = require('winston');
 var LOG_FILE = 'log/siphonage.log';
 var CONFIG_FILE='conf/siphonage.js';
-var GWID="GW_XJCJ67";
+var GWID="GW_XJCJ66";
 //init all and save last runtime log
 var config;
 try {
