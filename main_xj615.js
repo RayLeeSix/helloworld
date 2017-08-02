@@ -181,11 +181,11 @@ function loraParse(rawData,eui) {
                         TCBat[devID]["a1"]=parseFloat(TCBat[devID]["a1"])+parseFloat(bdata);
                         console.log('a1='+TCBat[devID]["a1"]);
                     }else if(TCBat[devID]["num"]<10 && TCBat[devID]["num"]>5){
-                        TCBat[devID]["a1"]=(parseFloat(TCBat[devID]["a1"])/5.0).toFixed(2);
+                        TCBat[devID]["a1"]=(parseFloat(TCBat[devID]["a1"])/5.0).toFixed(4);
                         TCBat[devID]["a2"]=parseFloat(TCBat[devID]["a2"])+parseFloat(bdata);
                         console.log('a2='+TCBat[devID]["a2"]);
                     }else if(TCBat[devID]["num"]<15 && TCBat[devID]["num"]>10){
-                        TCBat[devID]["a2"]=(parseFloat(TCBat[devID]["a2"])/5.0).toFixed(2);
+                        TCBat[devID]["a2"]=(parseFloat(TCBat[devID]["a2"])/5.0).toFixed(4);
                         debug(TCBat[devID]["a3"]);
                         TCBat[devID]["a3"]=parseFloat(TCBat[devID]["a3"])+parseFloat(bdata);
                         console.log('a3='+TCBat[devID]["a3"]);
@@ -193,9 +193,9 @@ function loraParse(rawData,eui) {
                     }
                     TCBat[devID]["num"]=TCBat[devID]["num"]+1;
                     if(TCBat[devID]["num"]>=15){
-                        TCBat[devID]["a3"]=(parseFloat(TCBat[devID]["a3"])/5.0).toFixed(2);
+                        TCBat[devID]["a3"]=(parseFloat(TCBat[devID]["a3"])/5.0).toFixed(4);
                         TCBat[devID]["num"]=0;
-                        bdata=((parseFloat(TCBat[devID]["a1"])+parseFloat(TCBat[devID]["a2"])+parseFloat(TCBat[devID]["a3"]))/3.0).toFixed(2);
+                        bdata=((parseFloat(TCBat[devID]["a1"])+parseFloat(TCBat[devID]["a2"])+parseFloat(TCBat[devID]["a3"]))/3.0).toFixed(4);
                         bdata=mapTCBat(bdata);
                         reportedState["battery"] = bdata;
                         //lagoon.publish('things/'+devID+'/battery_update', JSON.stringify(reportedState));
