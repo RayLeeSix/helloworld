@@ -4,17 +4,18 @@ var jsonfile = require('jsonfile');
 var loraURL = "mqtt://127.0.0.1";
 var lagoonURL = "mqtt://101.200.34.179";
 var logto = require('winston');
-var LOG_FILE = 'log/siphonage.log';
-var CONFIG_FILE='conf/siphonage.js';
+var LOG_FILE = '/home/pi/siphonage/log/siphonage.log';
+var CONFIG_FILE='/home/pi/siphonage/conf/siphonage.js';
 var GWID="GW_XJCJ66";
+var debug=require("debug")('a.js');
 //init all and save last runtime log
 var config;
 try {
     config=require(CONFIG_FILE);
     GWID=config.GWID;
     //save last runtime log data
-    if(fs.existsSync("log/siphonage.log"))
-        fs.createReadStream(LOG_FILE).pipe(fs.createWriteStream('log/log'+Date.parse(new Date())+'.log'));
+    if(fs.existsSync("/home/pi/siphonage/log/siphonage.log"))
+        fs.createReadStream(LOG_FILE).pipe(fs.createWriteStream('/home/pi/siphonage/log/log'+Date.parse(new Date())+'.log'));
     else
         console.log("There's no log file !");
 } catch (error) {
@@ -31,19 +32,11 @@ logto.add(
 
 logto.info('siphonage Starting');
 
-/* update the status.json in order for multitech conduit app-manager to recogonize
-the status of the app*/
-var status={
-    "pid": process.pid,
-    "AppInfo": "Started."
-}
 
-/*jsonfile.writeFile(process.env.PWD+"/status.json",status, function (err){
-    console.error(err)
-});*/
 //******************************************************************************
 thingList={}; // store the registered things and their last update timestamp
 thingInterval={};//store the registered thing's updating interval
+thingCo2Interval={};//store the registered TC thing's CO2 updating interval
 stedTimeList={};//save every sted's timestamp,to know the sensor data's time
 stedlist={};//save sted's sensor data
 wslist={};//handle mutil WeatherStation data casue WS1,WS2
@@ -64,10 +57,11 @@ lagoon.on('connect', function(){
 	gatewayinfo["online"]="true";
     lagoon.publish('gateway/update',JSON.stringify(gatewayinfo));
     lagoon.subscribe('things/+/interval_request');
+    lagoon.subscribe('things/+/co2interval_request');
     lagoon.subscribe('gateway/'+GWID+'/request/+');
     lagoon.subscribe('gateway/GW_ALL/request/+');
     logto.info('login lagoon ,subscribe chnal down:'+Date.now());
-    
+    debug("connect!!");
 })
 
 //*****************local functional functions***********************************
@@ -85,13 +79,7 @@ function loraParse(rawData,eui) {
         reportedState['timestamp']=timestamp;
         //check if this is a new sensor device 
         //get a unique id and send to the device
-        if(msg.length===2){
-            var devhardID=msg[0];
-            var devType=msg[1];
-            //var devID=getdevID();
-        }
-
-
+        
         if (!thingList.hasOwnProperty(devID)){
                 // if the device has not been registered before, register it
                 // and also reset the polling interval to 15 seconds
@@ -116,31 +104,33 @@ function loraParse(rawData,eui) {
                 else if(devID.indexOf('WS') > -1){
                     wslist[devID]={};
                 }
-                 else if(devID.indexOf('TC') > -1){
+                else if(devID.indexOf('TC') > -1){
                     TCBat[devID]={};
                     TCBat[devID]["num"]=0;
-                    TCBat[devID]["a0"]=0;
                     TCBat[devID]["a1"]=0;
                     TCBat[devID]["a2"]=0;
+                    TCBat[devID]["a3"]=0;
                     TCBat[devID]["boot"]=1;
+                    thingCo2Interval[devID]='02';
                 }
-                
-                //reportedState = {};
-                //reportedState["interval"]="15";
-                //lagoon.publish('things/'+devID+'/interval_confirm', JSON.stringify(reportedState));
-                //thingList[devID]=timestamp;
         }
-       
         
         // check to see if the device has been registered before
-        if (thingInterval[devID].charAt(0)!=0) {
+        if (thingInterval[devID].charAt(0)!='0') {
                 // if reported interval has been updated, send the new interval back to mDot
-                // header for replying interval back to mDot is 'I'
+                // header for replying interval back to Dot is 'I'
                 //var inter='I';
-                //inter += thingInterval[devID];
-                var replyData=Buffer(thingInterval[devID]).toString('base64');
+                //inter += thingInterval[devID];      
+                var replyData=Buffer(thingInterval[devID]).toString('hex');
                 sendToNode(eui, replyData);
+                console.log("Send interval data!"+replyData);
         }
+        if (thingCo2Interval[devID].charAt(0)!='0') {
+                // header for replying CO2 interval back to Dot is 'C'
+                var replyData=Buffer(thingCo2Interval[devID]).toString('hex');
+                sendToNode(eui, replyData);
+                console.log("Send CO2 interval data!"+replyData);
+        }    
 
         //update devicei's latest up date timestamp 
         //cause things/request/device need it!!
@@ -150,7 +140,8 @@ function loraParse(rawData,eui) {
             // if the message from mDot is a new interval, clear the update interval
             // flag
             if (msg[1]==="interval"){
-                thingInterval[devID]="0"+ msg[2];
+                console.log("Got interval confirm data!");
+                thingInterval[devID]='0'+ msg[2];
                 reportedState["interval"] = msg[2];
                 try {
                     var interval=parseInt(msg[2]);
@@ -161,11 +152,19 @@ function loraParse(rawData,eui) {
                     console.log("Imcomplete interval confirm data!");
                     return 1;
                 }
-                
                 lagoon.publish('things/'+devID+'/interval_confirm', JSON.stringify(reportedState));
                 reportedState = {};
                 return 0;
-            }else if (msg[1]==="battery") {
+            }else if (msg[1]==="co2interval"){
+                console.log("Got CO2 interval confirm data!");
+                thingCo2Interval[devID]='0'+ msg[2];
+                reportedState["co2interval"] = msg[2];
+                reportedState["interval"] = thingInterval[devID];
+                lagoon.publish('things/'+devID+'/co2interval_confirm', JSON.stringify(reportedState));
+                reportedState = {};
+                return 0;
+            }
+            else if (msg[1]==="battery") {
                 reportedState["battery"] = msg[2];
                 lagoon.publish('things/'+devID+'/battery_update', JSON.stringify(reportedState));
                 reportedState = {};
@@ -187,8 +186,10 @@ function loraParse(rawData,eui) {
                         console.log('a2='+TCBat[devID]["a2"]);
                     }else if(TCBat[devID]["num"]<15 && TCBat[devID]["num"]>10){
                         TCBat[devID]["a2"]=(parseFloat(TCBat[devID]["a2"])/5.0).toFixed(2);
+                        debug(TCBat[devID]["a3"]);
                         TCBat[devID]["a3"]=parseFloat(TCBat[devID]["a3"])+parseFloat(bdata);
                         console.log('a3='+TCBat[devID]["a3"]);
+                        debug(TCBat[devID]["a3"]);
                     }
                     TCBat[devID]["num"]=TCBat[devID]["num"]+1;
                     if(TCBat[devID]["num"]>=15){
@@ -338,23 +339,22 @@ function loraParse(rawData,eui) {
                     //return 1;
                 }
             
-                try {
-                    var co2tmp=parseInt(tcdata[2]);
+                try { 
                     if(tcdata[2].charAt(0)<'0' | tcdata[2].charAt(0)>'9')
                     {
                             console.log("CO2 X!");
-                            //return 1;
+                    }else{
+                        var co2tmp=parseInt(tcdata[2]);    
+                        if(co2tmp<0){
+                            co2tmp=Math.abs(co2tmp);
+                            co2tmp=co2tmp+32896;
+                            tcdata[2]=co2tmp;  
+                        }
+                        reportedState["co2"] =tcdata[2];
+                        //console.log("CO2="+tcdata[2]);
                     }
-                    if(co2tmp<0){
-                        co2tmp=Math.abs(co2tmp);
-                        co2tmp=co2tmp+32896;
-                        tcdata[2]=co2tmp;
-                    }
-                    //console.log("CO2="+tcdata[2]);
-                    reportedState["co2"] =tcdata[2];
                 } catch (error) {
-                    console.log("CO2 X!");
-                    
+                    console.log("CO2 X!"); 
                 }
 
                 var tmp=parseFloat(tcdata[3]);
@@ -471,16 +471,19 @@ function mapTCBat(avdata){
     if(avdata>6.7){
         if(avdata>7.2)
             avdata=7.2;
-        avdata=(avdata-6.7)*0.04+0.98;
+        //avdata=(avdata-6.7)*0.04+0.98;
+        avdata=avdata*0.286-1.0592;
         return avdata.toFixed(2);
     }else if(avdata>5.5){
-        avdata=(avdata-5.5)*0.066+0.9;
+        //avdata=(avdata-5.5)*0.066+0.9;
+        avdata=avdata*0.5-2.45;
         return avdata.toFixed(2);
-    }else if(avdata>5){
-        avdata=(avdata-5)*0.2+0.8;
-        return avdata.toFixed(2);
+    //}else if(avdata>5){
+        //avdata=(avdata-5)*0.2+0.8;
+        //return avdata.toFixed(2);
     }else if(avdata>4.5){
-        avdata=(avdata-4.5)*1.6;
+        //avdata=(avdata-4.5)*1.6;
+        avdata=avdata*0.3-1.35;
         return avdata.toFixed(2);
     }else{
         return 0;
@@ -506,6 +509,15 @@ function getlocalip() {
         response.on('end', function () {
             console.log(ipstr);
             report["ip_address"]=ipstr;
+            var os=require('os');
+            ifaces=os.networkInterfaces();
+            for (var dev in ifaces) {
+                    ifaces[dev].forEach(function(details,alias){
+                    if ((details.family=='IPv4') && (details.internal == false)) {
+                    report["local_ip_address"] = details.address;
+                    }
+                });
+            }
             lagoon.publish('gateway/'+GWID+'/env', JSON.stringify(report));
         });
          //if got erro get internal ip instead
@@ -581,22 +593,22 @@ mDotProxy.on("error", function(error) {
 mDotProxy.on('message', function(topic, message) {
     //logto.info('topic:' + topic);
     //console.log("message: ", message.toString());
-    eui = topic.split('/')[1];
+    try {
+        eui = topic.split('/')[1];
+        // convert MQTT message to JSON object
+        // message contains the following fields
+        // freq; datr; lsnr; rssi; seqn; timestamp
+        json = JSON.parse(message.toString());
+        // decode base64 payload
+        data = new Buffer(json.data, "hex");
+        logto.info('Got data form:'+eui+'with data: '+data.toString());
+        //console.log('Got data form:'+eui+'with data: '+data.toString());
+        loraParse(data.toString(),eui);
+    } catch (error) {
+        console.log("mDotProxy.on message error: ", error);
+        debug(json);
+    }
     
-    // convert MQTT message to JSON object
-    // message contains the following fields
-    // freq; datr; lsnr; rssi; seqn; timestamp
-    json = JSON.parse(message.toString());
-    // decode base64 payload
-    data = new Buffer(json.data, "hex");
-    logto.info('Got data form:'+eui+'with data: '+data.toString());
-	//console.log('Got data form:'+eui+'with data: '+data.toString());
-    loraParse(data.toString(),eui);
-
-    //var ackmsg='GW got';
-    //var replyMsg=Buffer(ackmsg).toString('base64');
-    //sendToNode(eui, replyMsg);
-    //logto.info('Send ACK data to: '+ eui);
 });
 
 lagoon.on('error',function(error) {
@@ -609,7 +621,7 @@ lagoon.on('message', function(topic, message){
    
     devID = topic.split('/')[1];
     msgType = topic.split('/')[2];
-   
+    debug(devID,msgType);
     if(msgType=='request'){
         msgType = topic.split('/')[3];
     }
@@ -620,6 +632,19 @@ lagoon.on('message', function(topic, message){
                 logto.info('Received interval message from lagoon'+message.toString()+'#T'+Date.now());
                 //if interval header with char 'I' means it a new interval
                 thingInterval[devID] = "I"+lagoonJSON.interval;
+        } catch (error) {
+                console.log('Received erro JSON message from lagoon');
+                logto.info('Received erro JSON message from lagoon'+message.toString()+'#T'+Date.now());
+                lagoonJSON= {};
+                return 1;
+        }    
+    }
+    else if (msgType == 'co2interval_request'){
+         try {
+                lagoonJSON = JSON.parse(message.toString());
+                logto.info('Received interval message from lagoon'+message.toString()+'#T'+Date.now());
+                //if interval header with char 'I' means it a new interval
+                thingCo2Interval[devID] = "C"+lagoonJSON.interval;
         } catch (error) {
                 console.log('Received erro JSON message from lagoon');
                 logto.info('Received erro JSON message from lagoon'+message.toString()+'#T'+Date.now());
