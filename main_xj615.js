@@ -125,7 +125,7 @@ function loraParse(rawData,eui) {
                 sendToNode(eui, replyData);
                 console.log("Send interval data!"+replyData);
         }
-        if (thingCo2Interval[devID].charAt(0)!='0') {
+        if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
                 // header for replying CO2 interval back to Dot is 'C'
                 var replyData=Buffer(thingCo2Interval[devID]).toString('hex');
                 sendToNode(eui, replyData);
