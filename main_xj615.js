@@ -141,19 +141,28 @@ function loraParse(rawData,eui) {
             // flag
             if (msg[1]==="interval"){
                 console.log("Got interval confirm data!");
-                thingInterval[devID]='0'+ msg[2];
-                reportedState["interval"] = msg[2];
-                try {
-                    var interval=parseInt(msg[2]);
-                    if(maxInterval<interval){
-                        maxInterval=interval;
+                if(parseInt(replaceAt(thingInterval[devID],0,'0'))!=parseInt(msg[2])){
+                    var thingtmpInterval=replaceAt(thingInterval[devID],0,'I');
+                    var replyData=Buffer(thingtmpInterval).toString('hex');
+                    sendToNode(eui, replyData);
+                    console.log("Maybe node reboot,Send interval data!"+replyData);
+                }else{
+                    var replyData=Buffer('I'+ msg[2]).toString('hex');
+                    sendToNode(eui, replyData);
+                    thingInterval[devID]='0'+ msg[2];
+                    reportedState["interval"] = msg[2];
+                    try {
+                        var interval=parseInt(msg[2]);
+                        if(maxInterval<interval){
+                            maxInterval=interval;
+                        }
+                    } catch (error) {
+                        console.log("Imcomplete interval confirm data!");
+                        return 1;
                     }
-                } catch (error) {
-                    console.log("Imcomplete interval confirm data!");
-                    return 1;
+                    lagoon.publish('things/'+devID+'/interval_confirm', JSON.stringify(reportedState));
+                    reportedState = {};
                 }
-                lagoon.publish('things/'+devID+'/interval_confirm', JSON.stringify(reportedState));
-                reportedState = {};
                 return 0;
             }else if (msg[1]==="co2interval"){
                 console.log("Got CO2 interval confirm data!");
@@ -464,6 +473,11 @@ function sendToNode(eui, payload) {
 //************************************************************
 function sendStedlist(){
     return;
+}
+
+
+function replaceAt(string, index, replace) {
+  return string.substring(0, index) + replace + string.substring(index + 1);
 }
 //*************************************************************
 
