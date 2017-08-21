@@ -1,6 +1,7 @@
 var fs = require('fs');
 var mqtt = require("mqtt");
 var logto = require('winston');
+var loraParse = require('loraParse');
 
 var lagoonURL = "mqtt://101.200.34.179";
 var lagoonUser="pastoral";
@@ -76,7 +77,8 @@ var server = net.createServer(function(socket) {
     //listen data recv event
     socket.on('data', function(data) {
         console.log(data.toString());
-        socket.write('Hello Client!');
+        loraParse(data);
+        //socket.write('Hello Client!');
     });
 
     //listen client disconnect  event

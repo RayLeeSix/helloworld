@@ -1,7 +1,20 @@
-module.exports = loraParse(corawData,euiunt);
+module.exports = loraParse(rawData);
+
+//*****globle var***************************************************************
+thingList={}; // store the registered things and their last update timestamp
+thingInterval={};//store the registered thing's updating interval
+thingCo2Interval={};//store the registered TC thing's CO2 updating interval
+stedTimeList={};//save every sted's timestamp,to know the sensor data's time
+stedlist={};//save sted's sensor data
+wslist={};//handle mutil WeatherStation data casue WS1,WS2
+TCBat={};
+var maxInterval=0;//store max Interval to confirm weather mdot is online
+//stedTimeList["current"]=0;
+//stedTimeList["devID"]=0;
+//******************************************************************************
 
 //*****************local functional functions***********************************
-function loraParse(rawData,eui) {
+function loraParse(rawData) {
         // this function parses the raw data uploaded by mdot
         if(rawData.indexOf(',')<0){
             console.log("Imcomplete split data!");
@@ -58,14 +71,14 @@ function loraParse(rawData,eui) {
                 //var inter='I';
                 //inter += thingInterval[devID];      
                 var replyData=Buffer(thingInterval[devID]).toString('hex');
-                sendToNode(eui, replyData);
                 console.log("Send interval data!"+replyData);
+                return replyData;
         }
         if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
                 // header for replying CO2 interval back to Dot is 'C'
                 var replyData=Buffer(thingCo2Interval[devID]).toString('hex');
-                sendToNode(eui, replyData);
                 console.log("Send CO2 interval data!"+replyData);
+                return replyData;
         }    
 
         //update devicei's latest up date timestamp 
