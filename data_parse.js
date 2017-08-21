@@ -1,4 +1,4 @@
-module.exports = loraParse(rawData);
+
 
 //*****globle var***************************************************************
 thingList={}; // store the registered things and their last update timestamp
@@ -14,7 +14,7 @@ var maxInterval=0;//store max Interval to confirm weather mdot is online
 //******************************************************************************
 
 //*****************local functional functions***********************************
-function loraParse(rawData) {
+module.exports = function loraParse(rawData) {
         // this function parses the raw data uploaded by mdot
         if(rawData.indexOf(',')<0){
             console.log("Imcomplete split data!");
