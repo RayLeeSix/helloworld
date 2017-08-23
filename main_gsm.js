@@ -1,7 +1,8 @@
 var fs = require('fs');
 var mqtt = require("mqtt");
 var logto = require('winston');
-var loraParse = require('loraParse.js');
+var net = require('net') 
+var loraParse = require('./data_parse.js');
 
 var lagoonURL = "mqtt://101.200.34.179";
 var lagoonUser="pastoral";
