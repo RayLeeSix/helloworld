@@ -377,6 +377,56 @@ module.exports = function loraParse(rawData) {
                 replyData["MQTT"]=reportedState;
                 return replyData;     
             }
+            else if (msg[1]==="WS") 
+            {
+                if(msg[2].indexOf(';')<0){
+                    console.log("Imcomplete split data!");
+                    return 1;
+                }
+
+                var wsdata=msg[2].split(';');
+                if(wsdata.length!=7)
+                {
+                        console.log("Erro WS data!");
+                        return 1;
+                }  
+
+                try {
+                    wslist[devID]["wind_speed"] = (parseInt(wsdata[0],10)/10)+'';
+                    wslist[devID]["wind_direction"] =parseInt( wsdata[1],10)+'';
+                    wslist[devID]["rain_hourly"] = parseInt(wsdata[2],10)+'';
+
+                    //handle fault pressure data with b0900 and add '0'
+                    if(wsdata[3].charAt(0)<'0' | wsdata[3].charAt(0)>'9'){
+                        wsdata[3]=wsdata[3].replace(wsdata[3].charAt(0),'0');
+                        wsdata[3]=wsdata[3]+'0';
+                    }
+                    var pretemp=parseInt(wsdata[3],10)/10;
+                    if(pretemp>10)
+                        wslist[devID]["pressure"] = parseInt(wsdata[3],10)/10+'';
+
+                    var tmp=parseFloat(wsdata[4]).toFixed(2);
+                    (tmp==0.00)?tmp=0:tmp;
+                    wslist[devID]["air_temperature"] = tmp+'';
+
+                    tmp=parseFloat(wsdata[5]).toFixed(2);
+                    (tmp==0.00)?tmp=0:tmp;
+                    wslist[devID]["humidity"] = tmp+'';
+
+                    wslist[devID]["lux"] =parseInt(wsdata[6],10)+'';
+             
+                    wslist[devID]['timestamp']=timestamp;
+
+                    var replyData={};
+                    replyData["CHNL"]="things/"+devID+"/reading";
+                    replyData["MQTT"]=wslist[devID];
+                    wslist[devID]={};
+                    return replyData; 
+                } catch (error) {
+                     console.log("Erro WS data!");
+                     return 1;
+                }  
+            }
             else if (msg[1]==="WS1") 
             {
                 if(msg[2].indexOf(';')<0){
