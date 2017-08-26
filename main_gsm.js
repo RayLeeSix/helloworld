@@ -142,13 +142,14 @@ var server = net.createServer(function(socket) {
     socket.on('data', function(data) {
         console.log(data.toString());
         
-        socket.write('Hello Client!');
         var rpldata=loraParse(data.toString());
         if (rpldata.hasOwnProperty('NODE')){
             socket.write(rpldata["NODE"].toString());
         }
+        if (rpldata.hasOwnProperty('MQTT')){
+            lagoon.publish(rpldata["CHNL"],JSON.stringify(rpldata["MQTT"]));
+        }
         console.log("handle out:"+JSON.stringify(rpldata));
-        //socket.write('Hello Client!');
     });
 
     //listen client disconnect  event
