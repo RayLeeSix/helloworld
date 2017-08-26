@@ -14,7 +14,7 @@ var debug=require("debug")('main_gsm.js');
 
     
 var HOST = '127.0.0.1';     //def server address
-var PORT = 25566;            //def tcp port
+var PORT = 25536;            //def tcp port
 
 try {
     //save last runtime log data
