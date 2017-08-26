@@ -1,4 +1,4 @@
-
+var debug=require("debug")('data_parse.js');
 
 //*****globle var***************************************************************
 thingList={}; // store the registered things and their last update timestamp
@@ -64,40 +64,21 @@ module.exports = function loraParse(rawData) {
                 }
         }
         
-        // check to see if the device has been registered before
-        if (thingInterval[devID].charAt(0)!='0') {
-                // if reported interval has been updated, send the new interval back to mDot
-                // header for replying interval back to Dot is 'I'
-                //var inter='I';
-                //inter += thingInterval[devID];      
-                var replyData=Buffer(thingInterval[devID]).toString('hex');
-                console.log("Send interval data!"+replyData);
-                return replyData;
-        }
-        if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
-                // header for replying CO2 interval back to Dot is 'C'
-                var replyData=Buffer(thingCo2Interval[devID]).toString('hex');
-                console.log("Send CO2 interval data!"+replyData);
-                return replyData;
-        }    
-
-        //update devicei's latest up date timestamp 
-        //cause things/request/device need it!!
-        thingList[devID]=timestamp; 
-
-        if (msg.length==3) {
-            // if the message from mDot is a new interval, clear the update interval
-            // flag
-            if (msg[1]==="interval"){
+        // if the message from mDot is a new interval, clear the update interval flag
+        if (msg[1]==="interval")
+        {
                 console.log("Got interval confirm data!");
                 if(parseInt(replaceAt(thingInterval[devID],0,'0'))!=parseInt(msg[2])){
                     var thingtmpInterval=replaceAt(thingInterval[devID],0,'I');
                     var replyData=Buffer(thingtmpInterval).toString('hex');
-                    sendToNode(eui, replyData);
                     console.log("Maybe node reboot,Send interval data!"+replyData);
+                    var replyData={};
+                    replyData["NODE"]=Buffer(thingInterval[devID]).toString();
+                    console.log("Send interval data!"+JSON.stringify(replyData));
+                    return replyData;
                 }else{
                     var replyData=Buffer('I'+ msg[2]).toString('hex');
-                    sendToNode(eui, replyData);
+                    //sendToNode(eui, replyData);
                     thingInterval[devID]='0'+ msg[2];
                     reportedState["interval"] = msg[2];
                     try {
@@ -109,25 +90,93 @@ module.exports = function loraParse(rawData) {
                         console.log("Imcomplete interval confirm data!");
                         return 1;
                     }
-                    lagoon.publish('things/'+devID+'/interval_confirm', JSON.stringify(reportedState));
-                    reportedState = {};
+
+                    var replyData={};
+                    replyData["CHNL"]="things/"+devID+"/interval_confirm";
+                    replyData["MQTT"]=reportedState;
+                    return replyData;
                 }
                 return 0;
-            }else if (msg[1]==="co2interval"){
+        }
+        else if (msg[1]==="co2interval")
+        {
                 console.log("Got CO2 interval confirm data!");
                 thingCo2Interval[devID]='0'+ msg[2];
                 reportedState["co2interval"] = msg[2];
                 reportedState["interval"] = thingInterval[devID];
-                lagoon.publish('things/'+devID+'/co2interval_confirm', JSON.stringify(reportedState));
-                reportedState = {};
-                return 0;
+
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/co2interval_confirm";
+                replyData["MQTT"]=reportedState;
+                return replyData;
+        }
+
+         // check to see if the device has been registered before
+        if (thingInterval[devID].charAt(0)!='0') {
+                // if reported interval has been updated, send the new interval back to mDot
+                // header for replying interval back to Dot is 'I'  
+                var replyData={};
+                replyData["NODE"]=Buffer(thingInterval[devID]).toString();
+                console.log("Send interval data!"+JSON.stringify(replyData));
+                return replyData;
+        }
+        if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
+                // header for replying CO2 interval back to Dot is 'C'
+                var replyData={};
+                replyData["NODE"]=Buffer(thingInterval[devID]).toString();
+                console.log("Send CO2 interval data!"+JSON.stringify(replyData));
+                return replyData;
+        }  
+
+        //update devicei's latest up date timestamp 
+        //cause things/request/device need it!!
+        thingList[devID]=timestamp; 
+
+        if (msg.length==3)
+        {
+            if (msg[1]==="interval_request")
+            {
+                console.log("Got interval request data!");
+                try {
+                        //logto.info('Received interval message from lagoon'+msg[2]+'#T'+Date.now());
+                        thingInterval[devID] = "I"+msg[2];
+                } catch (error) {
+                        console.log('Received erro JSON message from lagoon');
+                        //logto.info('Received erro JSON message from lagoon'+msg[2]+'#T'+Date.now());
+                        lagoonJSON= {};
+                        return 1;
+                }    
+                var replyData={};
+                replyData["MACK"]="interval_request";
+                return replyData;
             }
-            else if (msg[1]==="battery") {
+            else if (msg[1]==="co2interval_request")
+            {
+                console.log("Got CO2 interval request data!");
+                try {
+                        //logto.info('Received co2 interval message from lagoon'+msg[2]+'#T'+Date.now());
+                        thingInterval[devID] = "C"+msg[2];
+                } catch (error) {
+                        console.log('Received erro JSON message from lagoon');
+                        //logto.info('Received erro JSON message from lagoon'+msg[2]+'#T'+Date.now());
+                        lagoonJSON= {};
+                        return 1;
+                }    
+                var replyData={};
+                replyData["MACK"]="co2interval_request";
+                return replyData;
+            }
+            else if (msg[1]==="battery")
+            {
                 reportedState["battery"] = msg[2];
-                lagoon.publish('things/'+devID+'/battery_update', JSON.stringify(reportedState));
-                reportedState = {};
-                return 0;
-            }else if (msg[1]==="MainPower") {
+
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/battery_update";
+                replyData["MQTT"]=reportedState;
+                return replyData;
+            }
+            else if (msg[1]==="MainPower") 
+            {
                 var rawvol=parseFloat(msg[2]);
                 var bdata=0;
                 if(isNaN(rawvol)){
@@ -165,36 +214,36 @@ module.exports = function loraParse(rawData) {
                     if(TCBat[devID]["boot"]==1){
                         bdata=mapTCBat(rawvol/1000.0);
                         reportedState["battery"] = bdata;
-                        lagoon.publish('things/'+devID+'/battery_update', JSON.stringify(reportedState));
+
+                        var replyData={};
+                        replyData["CHNL"]="things/"+devID+"/battery_update";
+                        replyData["MQTT"]=reportedState;
+                        return replyData;
                     }
                         
                 }
                 return 0;
-            }else if (msg[1]==="VOL") {
-                var rawvol=parseFloat(msg[2]);
-                var bdata=0;
-                if(rawvol!=NaN){
-                    bdata=(rawvol-3500)/700.0;
-                    bdata=bdata.toFixed(2);
-                    reportedState["battery"] = bdata;
-                    lagoon.publish('things/'+devID+'/battery_update', JSON.stringify(reportedState)); 
-                }
-                else{
-                    console.log('prase int erro!');
-                }
-                 reportedState = {};
-                 return 0;
-            } else if (msg[1]==="BT") {      
+            }
+            else if (msg[1]==="BT") 
+            {      
                 reportedState["boot"] = msg[2];
-                lagoon.publish('things/'+devID+'/boot', JSON.stringify(reportedState));
-                reportedState = {};
-                return 0;
-            } else if (msg[1]==="YZ") {
+
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/boot";
+                replyData["MQTT"]=reportedState;
+                return replyData;
+            } 
+            else if (msg[1]==="YZ") 
+            {
                 reportedState["last_will"] = msg[2];
-                lagoon.publish('things/'+devID+'/last_will', JSON.stringify(reportedState));
-                reportedState = {};
-                return 0;
-            }else if (msg[1]==="gps") {
+                
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/last_will";
+                replyData["MQTT"]=reportedState;
+                return replyData;
+            }
+            else if (msg[1]==="gps")
+            {
                 if(msg[2].indexOf(';')<0){
                      console.log("Imcomplete split data!");
                      return 1;
@@ -212,37 +261,33 @@ module.exports = function loraParse(rawData) {
                     //var lon=parseFloat(gpsdata[2])
                     reportedState["lat"] = lat.toFixed(4)+"";//(parseFloat(gpsdata[0])/100).toFixed(4);
                     reportedState["lon"] = lon.toFixed(4)+"";//(parseFloat(gpsdata[2])/100).toFixed(4);
-                    lagoon.publish('things/'+devID+'/location', JSON.stringify(reportedState));
+
+                    var replyData={};
+                    replyData["CHNL"]="things/"+devID+"/location";
+                    replyData["MQTT"]=reportedState;
+                    return replyData;
                 }else{
                     console.log("Imcomplete GPS data!");
                     return 1;
                 }
                 reportedState = {};
                 return 0;
-            }else if (msg[1]==="STH") {
-                if(msg[2].indexOf(';')<0){
-                     console.log("Imcomplete split data!");
-                     return 1;
-                }
-                var shtdata=msg[2].split(';');
-                try {
-                     stedlist[devID]['surface_temperature'] =shtdata[0];
-                } catch (error) {
-                    console.log("erro wsl data!");
-                    return 1;
-                }
-            }else if (msg[1]==="sted") {
+            }
+            else if (msg[1]==="ST") 
+            {
                 //can only handle one same devID STED data
                 if(msg[2].indexOf('#')<0){
                      console.log("Imcomplete split data!");
                      return 1;
                 }
                 var steddata=msg[2].split('#');
-                if(stedTimeList[devID]["current"]!=1){
+                if(stedTimeList[devID]["current"]!=1)
+                {
                     if(stedTimeList[devID]["current"]!==parseInt(steddata[0])){
                         //console.log("another time's sted msg:"+stedTimeList[devID]["current"]);
-                        stedlist[devID]['timestamp']=timestamp;
-                        lagoon.publish('things/'+devID+'/reading', JSON.stringify(stedlist[devID]));
+                        var replyData={};
+                        replyData["CHNL"]="things/"+devID+"/reading";
+                        replyData["MQTT"]=stedlist[devID];
                         stedTimeList[devID]["current"]=parseInt(steddata[0]);
                         stedlist[devID] = {
                             20:null,
@@ -255,29 +300,37 @@ module.exports = function loraParse(rawData) {
                             160:null,
                             timestamp:'0'
                         };
+                        return replyData; 
                     } 
-                }else{
+                }
+                else
+                {
                     stedTimeList[devID]["current"]=parseInt(steddata[0]);
                 }
-                //console.log("sted msg:"+msg[2]);
-                if(steddata[1].indexOf('/')<0){
+
+                if(steddata[1].indexOf('/')<0)
+                {
                      console.log("Imcomplete split data!");
                      return 1;
                 }
+
                 var signalpart=steddata[1].split('/');
-                if(signalpart.length==4){
-                        stedlist[devID][parseInt(signalpart[0])+'']={};
-                        try {
-                            stedlist[devID][parseInt(signalpart[0])+'']["depth_temperature"]=parseFloat(signalpart[1])+"";
-                            stedlist[devID][parseInt(signalpart[0])+'']["soil_moisture"]=parseInt(signalpart[2])+"";
-                            stedlist[devID][parseInt(signalpart[0])+'']["soil_conductivity"]=parseInt(signalpart[3])+"";
-                        } catch (error) {
-                            console.log("Imcomplete STED data!");
-                            return 1;
-                        }
+                if(signalpart.length==4)
+                {
+                    stedlist[devID][parseInt(signalpart[0])+'']={};
+                    try {
+                        stedlist[devID][parseInt(signalpart[0])+'']["depth_temperature"]=parseFloat(signalpart[1])+"";
+                        stedlist[devID][parseInt(signalpart[0])+'']["soil_moisture"]=parseInt(signalpart[2])+"";
+                        stedlist[devID][parseInt(signalpart[0])+'']["soil_conductivity"]=parseInt(signalpart[3])+"";
+                    } catch (error) {
+                        console.log("Imcomplete STED data!");
+                        return 1;
+                    }
                 }
                 return 0;
-            }else if (msg[1]==="TC") {
+            }
+            else if (msg[1]==="TC") 
+            {
                 if(msg[2].indexOf(';')<0 | msg[2].split(';').length!= 4){
                      console.log("Imcomplete split data!");
                      return 1;
@@ -294,7 +347,6 @@ module.exports = function loraParse(rawData) {
                     reportedState["humidity"]=tcdata[1];
                 } catch (error) {
                     console.log("humi X!");
-                    //return 1;
                 }
             
                 try { 
@@ -320,17 +372,21 @@ module.exports = function loraParse(rawData) {
                 if(tmp > -50 && tmp < 100)
                     reportedState["soil_temperature"] =tcdata[3];
 
-                lagoon.publish('things/'+devID+'/reading', JSON.stringify(reportedState));
-                reportedState = {};
-                return 0;
-            }else if (msg[1]==="WS1") {
-                 if(msg[2].indexOf(';')<0){
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/reading";
+                replyData["MQTT"]=reportedState;
+                return replyData;     
+            }
+            else if (msg[1]==="WS1") 
+            {
+                if(msg[2].indexOf(';')<0){
                      console.log("Imcomplete split data!");
                      return 1;
                 }
+
                 var wsdata=msg[2].split(';');
                 if(wsdata.length==3){
-                    try {
+                    try{
                         var tmp=parseFloat(wsdata[0]).toFixed(2);
                         (tmp==0.00)?tmp=0:tmp;
                         wslist[devID]["air_temperature"] = tmp+'';
@@ -338,7 +394,6 @@ module.exports = function loraParse(rawData) {
                         (tmp==0.00)?tmp=0:tmp;
                         wslist[devID]["humidity"] = tmp+'';
                         wslist[devID]["lux"] =parseInt(wsdata[2],10)+'';
-                        //console.log("Up WS1 data done!");
                     } catch (error) {
                          console.log("Erro WS1 data!");
                          return 1;
@@ -349,8 +404,10 @@ module.exports = function loraParse(rawData) {
                 }
                 reportedState = {};
                 return 0;
-            }else if (msg[1]==="WS2") {
-                 if(msg[2].indexOf(';')<0){
+            }
+            else if (msg[1]==="WS2") 
+            {
+                if(msg[2].indexOf(';')<0){
                      console.log("Imcomplete split data!");
                      return 1;
                 }
@@ -358,10 +415,9 @@ module.exports = function loraParse(rawData) {
                 if(wsdata.length==4){
                     try {
                         wslist[devID]["wind_speed"] = (parseInt(wsdata[0],10)/10)+'';
-
                         wslist[devID]["wind_direction"] =parseInt( wsdata[1],10)+'';
-
                         wslist[devID]["rain_hourly"] = parseInt(wsdata[2],10)+'';
+
                         //handle fault pressure data with b0900 and add '0'
                         if(wsdata[3].charAt(0)<'0' | wsdata[3].charAt(0)>'9'){
                             wsdata[3]=wsdata[3].replace(wsdata[3].charAt(0),'0');
@@ -373,12 +429,11 @@ module.exports = function loraParse(rawData) {
 
                         wslist[devID]['timestamp']=timestamp;
 
-                        if(Object.keys(wslist[devID]).length===8){
-                            lagoon.publish('things/'+devID+'/reading', JSON.stringify(wslist[devID]));
-                        }else{
-                            console.log("Up WS2 data fail!--"+(JSON.stringify(wslist[devID])).toString()+"--"+"length:"+Object.keys(wslist[devID]).length);
-                            return 1;
-                        }  
+                        var replyData={};
+                        replyData["CHNL"]="things/"+devID+"/reading";
+                        replyData["MQTT"]=wslist[devID];
+                        wslist[devID]={};
+                        return replyData; 
                     } catch (error) {
                          console.log("Erro WS2 data!");
                          return 1;
@@ -389,19 +444,52 @@ module.exports = function loraParse(rawData) {
                 }
                 reportedState = {};
                 return 0;
-            }else {
+            }
+            else 
+            {
                 reportedState["reading"] = {};
                 reportedState["reading"][msg[1]]=msg[2];
-                lagoon.publish('things/'+devID+'/other', JSON.stringify(reportedState));
-                if(devID.indexOf('ST') > -1) {
-                    fs.appendFile('/var/log/'+devID+'.txt', msg[2], function (err) {
-                        if (err) return 1;
-                        console.log('The "data to append" was appended to file!');
-                    });
-                }
-                return 0;
+                var replyData={};
+                replyData["CHNL"]="things/"+devID+"/other";
+                replyData["MQTT"]=reportedState;
+                return replyData; 
+                //save STED battery status for test 
+                // if(devID.indexOf('ST') > -1) {
+                //     fs.appendFile('/var/log/'+devID+'.txt', msg[2], function (err) {
+                //         if (err) return 1;
+                //         console.log('The "data to append" was appended to file!');
+                //     });
+                // }
             }
-        }else{
-            console.log("Wrong Sensor msg, the length must be 3 !-such as- devID,dataType,data !")
+        }
+        else
+        {
+            console.log("Wrong Sensor msg, the length must be 3 !-such as- devID,dataType,data !");
+            return 0;
         } 
+}
+
+/***************************************/
+function replaceAt(string, index, replace) 
+{
+  return string.substring(0, index) + replace + string.substring(index + 1);
+}
+
+/***************************************/
+function mapTCBat(avdata)
+{
+    if(avdata>6.7){
+        if(avdata>7.2)
+            avdata=7.2;
+        avdata=avdata*0.286-1.0592;
+        return avdata.toFixed(2);
+    }else if(avdata>5.5){
+        avdata=avdata*0.5-2.45;
+        return avdata.toFixed(2);
+    }else if(avdata>4.5){
+        avdata=avdata*0.3-1.35;
+        return avdata.toFixed(2);
+    }else{
+        return 0;
+    }
 }
