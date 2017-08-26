@@ -21,9 +21,9 @@ try {
     if(fs.existsSync("./log/siphonage.log"))
         fs.createReadStream(LOG_FILE).pipe(fs.createWriteStream('./log/log'+Date.parse(new Date())+'.log'));
     else
-        console.log("There's no log file !");
+        debug("There's no log file !");
 } catch (error) {
-    console.log("error config file or wrong with copy log file !");
+    debug("error config file or wrong with copy log file !");
 }
 
 //****prepar log file***************************************************
@@ -67,7 +67,7 @@ lagoon.on('connect', function(){
 })
 
 lagoon.on('error',function(error) {
-    console.log("connect lagoon error: ", error);
+    debug("connect lagoon error: ", error);
     logto.info('connect lagoon error: ' + error);
     exit();
 });
@@ -89,7 +89,7 @@ lagoon.on('message', function(topic, message){
                 //thingInterval[devID] = "I"+lagoonJSON.interval;
                 loraParse(devID+","+msgType+",I"+lagoonJSON.interval);
         } catch (error) {
-                console.log('Received erro JSON message from lagoon');
+                debug('Received erro JSON message from lagoon');
                 logto.info('Received erro JSON message from lagoon'+message.toString()+'#T'+Date.now());
                 lagoonJSON= {};
                 return 1;
@@ -103,7 +103,7 @@ lagoon.on('message', function(topic, message){
                 //thingCo2Interval[devID] = "C"+lagoonJSON.interval;
                 loraParse(devID+","+msgType+",C"+lagoonJSON.interval);
         } catch (error) {
-                console.log('Received erro JSON message from lagoon');
+                debug('Received erro JSON message from lagoon');
                 logto.info('Received erro JSON message from lagoon'+message.toString()+'#T'+Date.now());
                 lagoonJSON= {};
                 return 1;
@@ -136,12 +136,13 @@ lagoon.on('message', function(topic, message){
 //create tcp server
 var server = net.createServer(function(socket) {
     var client = socket.remoteAddress + ':' + socket.remotePort;
-    console.log('Connected to ' + client);
+    debug('Connected to ' + client);
 
     //listen data recv event
     socket.on('data', function(data) {
-        console.log(data.toString());
+        debug(data.toString());
         
+        socket.write("I1800");
         var rpldata=loraParse(data.toString());
         if (rpldata.hasOwnProperty('NODE')){
             socket.write(rpldata["NODE"].toString());
@@ -149,12 +150,12 @@ var server = net.createServer(function(socket) {
         if (rpldata.hasOwnProperty('MQTT')){
             lagoon.publish(rpldata["CHNL"],JSON.stringify(rpldata["MQTT"]));
         }
-        console.log("handle out:"+JSON.stringify(rpldata));
+        debug("handle out:"+JSON.stringify(rpldata));
     });
 
     //listen client disconnect  event
     socket.on('end', function() {
-        console.log('Client disconnected.');
+        debug('Client disconnected.');
     });
 });
 

@@ -17,7 +17,7 @@ var maxInterval=0;//store max Interval to confirm weather mdot is online
 module.exports = function loraParse(rawData) {
         // this function parses the raw data uploaded by mdot
         if(rawData.indexOf(',')<0){
-            console.log("Imcomplete split data!");
+            debug("Imcomplete split data!");
             return 1;
         }
         var msg=rawData.split(',');
@@ -67,14 +67,14 @@ module.exports = function loraParse(rawData) {
         // if the message from mDot is a new interval, clear the update interval flag
         if (msg[1]==="interval")
         {
-                console.log("Got interval confirm data!");
+                debug("Got interval confirm data!");
                 if(parseInt(replaceAt(thingInterval[devID],0,'0'))!=parseInt(msg[2])){
                     var thingtmpInterval=replaceAt(thingInterval[devID],0,'I');
                     var replyData=Buffer(thingtmpInterval).toString('hex');
-                    console.log("Maybe node reboot,Send interval data!"+replyData);
+                    debug("Maybe node reboot,Send interval data!"+replyData);
                     var replyData={};
                     replyData["NODE"]=Buffer(thingInterval[devID]).toString();
-                    console.log("Send interval data!"+JSON.stringify(replyData));
+                    debug("Send interval data!"+JSON.stringify(replyData));
                     return replyData;
                 }else{
                     var replyData=Buffer('I'+ msg[2]).toString('hex');
@@ -87,7 +87,7 @@ module.exports = function loraParse(rawData) {
                             maxInterval=interval;
                         }
                     } catch (error) {
-                        console.log("Imcomplete interval confirm data!");
+                        debug("Imcomplete interval confirm data!");
                         return 1;
                     }
 
@@ -100,7 +100,7 @@ module.exports = function loraParse(rawData) {
         }
         else if (msg[1]==="co2interval")
         {
-                console.log("Got CO2 interval confirm data!");
+                debug("Got CO2 interval confirm data!");
                 thingCo2Interval[devID]='0'+ msg[2];
                 reportedState["co2interval"] = msg[2];
                 reportedState["interval"] = thingInterval[devID];
@@ -117,14 +117,14 @@ module.exports = function loraParse(rawData) {
                 // header for replying interval back to Dot is 'I'  
                 var replyData={};
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
-                console.log("Send interval data!"+JSON.stringify(replyData));
+                debug("Send interval data!"+JSON.stringify(replyData));
                 return replyData;
         }
         if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
                 // header for replying CO2 interval back to Dot is 'C'
                 var replyData={};
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
-                console.log("Send CO2 interval data!"+JSON.stringify(replyData));
+                debug("Send CO2 interval data!"+JSON.stringify(replyData));
                 return replyData;
         }  
 
@@ -136,12 +136,12 @@ module.exports = function loraParse(rawData) {
         {
             if (msg[1]==="interval_request")
             {
-                console.log("Got interval request data!");
+                debug("Got interval request data!");
                 try {
                         //logto.info('Received interval message from lagoon'+msg[2]+'#T'+Date.now());
                         thingInterval[devID] = "I"+msg[2];
                 } catch (error) {
-                        console.log('Received erro JSON message from lagoon');
+                        debug('Received erro JSON message from lagoon');
                         //logto.info('Received erro JSON message from lagoon'+msg[2]+'#T'+Date.now());
                         lagoonJSON= {};
                         return 1;
@@ -152,12 +152,12 @@ module.exports = function loraParse(rawData) {
             }
             else if (msg[1]==="co2interval_request")
             {
-                console.log("Got CO2 interval request data!");
+                debug("Got CO2 interval request data!");
                 try {
                         //logto.info('Received co2 interval message from lagoon'+msg[2]+'#T'+Date.now());
                         thingInterval[devID] = "C"+msg[2];
                 } catch (error) {
-                        console.log('Received erro JSON message from lagoon');
+                        debug('Received erro JSON message from lagoon');
                         //logto.info('Received erro JSON message from lagoon'+msg[2]+'#T'+Date.now());
                         lagoonJSON= {};
                         return 1;
@@ -180,22 +180,22 @@ module.exports = function loraParse(rawData) {
                 var rawvol=parseFloat(msg[2]);
                 var bdata=0;
                 if(isNaN(rawvol)){
-                    console.log('prase int erro!');
+                    debug('prase int erro!');
                 }else{
                     bdata=rawvol/1000.0;
                     bdata=bdata.toFixed(2);
                     if(TCBat[devID]["num"]<5){
                         TCBat[devID]["a1"]=parseFloat(TCBat[devID]["a1"])+parseFloat(bdata);
-                        console.log('a1='+TCBat[devID]["a1"]);
+                        debug('a1='+TCBat[devID]["a1"]);
                     }else if(TCBat[devID]["num"]<10 && TCBat[devID]["num"]>5){
                         TCBat[devID]["a1"]=(parseFloat(TCBat[devID]["a1"])/5.0).toFixed(4);
                         TCBat[devID]["a2"]=parseFloat(TCBat[devID]["a2"])+parseFloat(bdata);
-                        console.log('a2='+TCBat[devID]["a2"]);
+                        debug('a2='+TCBat[devID]["a2"]);
                     }else if(TCBat[devID]["num"]<15 && TCBat[devID]["num"]>10){
                         TCBat[devID]["a2"]=(parseFloat(TCBat[devID]["a2"])/5.0).toFixed(4);
                         debug(TCBat[devID]["a3"]);
                         TCBat[devID]["a3"]=parseFloat(TCBat[devID]["a3"])+parseFloat(bdata);
-                        console.log('a3='+TCBat[devID]["a3"]);
+                        debug('a3='+TCBat[devID]["a3"]);
                         debug(TCBat[devID]["a3"]);
                     }
                     TCBat[devID]["num"]=TCBat[devID]["num"]+1;
@@ -245,7 +245,7 @@ module.exports = function loraParse(rawData) {
             else if (msg[1]==="gps")
             {
                 if(msg[2].indexOf(';')<0){
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
                 var gpsdata=msg[2].split(';');
@@ -267,7 +267,7 @@ module.exports = function loraParse(rawData) {
                     replyData["MQTT"]=reportedState;
                     return replyData;
                 }else{
-                    console.log("Imcomplete GPS data!");
+                    debug("Imcomplete GPS data!");
                     return 1;
                 }
                 reportedState = {};
@@ -277,14 +277,14 @@ module.exports = function loraParse(rawData) {
             {
                 //can only handle one same devID STED data
                 if(msg[2].indexOf('#')<0){
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
                 var steddata=msg[2].split('#');
                 if(stedTimeList[devID]["current"]!=1)
                 {
                     if(stedTimeList[devID]["current"]!==parseInt(steddata[0])){
-                        //console.log("another time's sted msg:"+stedTimeList[devID]["current"]);
+                        //debug("another time's sted msg:"+stedTimeList[devID]["current"]);
                         var replyData={};
                         replyData["CHNL"]="things/"+devID+"/reading";
                         replyData["MQTT"]=stedlist[devID];
@@ -310,7 +310,7 @@ module.exports = function loraParse(rawData) {
 
                 if(steddata[1].indexOf('/')<0)
                 {
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
 
@@ -323,7 +323,7 @@ module.exports = function loraParse(rawData) {
                         stedlist[devID][parseInt(signalpart[0])+'']["soil_moisture"]=parseInt(signalpart[2])+"";
                         stedlist[devID][parseInt(signalpart[0])+'']["soil_conductivity"]=parseInt(signalpart[3])+"";
                     } catch (error) {
-                        console.log("Imcomplete STED data!");
+                        debug("Imcomplete STED data!");
                         return 1;
                     }
                 }
@@ -332,7 +332,7 @@ module.exports = function loraParse(rawData) {
             else if (msg[1]==="TC") 
             {
                 if(msg[2].indexOf(';')<0 | msg[2].split(';').length!= 4){
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
                 var tcdata=msg[2].split(';');
@@ -343,16 +343,16 @@ module.exports = function loraParse(rawData) {
                     var humtmp=parseFloat(tcdata[1]).toFixed(2);
                     if(humtmp>100)
                         tcdata[1]=100;
-                    console.log("humi="+tcdata[1]);
+                    debug("humi="+tcdata[1]);
                     reportedState["humidity"]=tcdata[1];
                 } catch (error) {
-                    console.log("humi X!");
+                    debug("humi X!");
                 }
             
                 try { 
                     if(tcdata[2].charAt(0)<'0' | tcdata[2].charAt(0)>'9')
                     {
-                            console.log("CO2 X!");
+                            debug("CO2 X!");
                     }else{
                         var co2tmp=parseInt(tcdata[2]);    
                         if(co2tmp<0){
@@ -361,10 +361,10 @@ module.exports = function loraParse(rawData) {
                             tcdata[2]=co2tmp;  
                         }
                         reportedState["co2"] =tcdata[2];
-                        //console.log("CO2="+tcdata[2]);
+                        //debug("CO2="+tcdata[2]);
                     }
                 } catch (error) {
-                    console.log("CO2 X!"); 
+                    debug("CO2 X!"); 
                 }
 
                 var tmp=parseFloat(tcdata[3]);
@@ -380,14 +380,14 @@ module.exports = function loraParse(rawData) {
             else if (msg[1]==="WS") 
             {
                 if(msg[2].indexOf(';')<0){
-                    console.log("Imcomplete split data!");
+                    debug("Imcomplete split data!");
                     return 1;
                 }
 
                 var wsdata=msg[2].split(';');
                 if(wsdata.length!=7)
                 {
-                        console.log("Erro WS data!");
+                        debug("Erro WS data!");
                         return 1;
                 }  
 
@@ -423,14 +423,14 @@ module.exports = function loraParse(rawData) {
                     wslist[devID]={};
                     return replyData; 
                 } catch (error) {
-                     console.log("Erro WS data!");
+                     debug("Erro WS data!");
                      return 1;
                 }  
             }
             else if (msg[1]==="WS1") 
             {
                 if(msg[2].indexOf(';')<0){
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
 
@@ -445,11 +445,11 @@ module.exports = function loraParse(rawData) {
                         wslist[devID]["humidity"] = tmp+'';
                         wslist[devID]["lux"] =parseInt(wsdata[2],10)+'';
                     } catch (error) {
-                         console.log("Erro WS1 data!");
+                         debug("Erro WS1 data!");
                          return 1;
                     }  
                 }else{
-                    console.log("Imcomplete WS1 data!");
+                    debug("Imcomplete WS1 data!");
                     return 1;
                 }
                 reportedState = {};
@@ -458,7 +458,7 @@ module.exports = function loraParse(rawData) {
             else if (msg[1]==="WS2") 
             {
                 if(msg[2].indexOf(';')<0){
-                     console.log("Imcomplete split data!");
+                     debug("Imcomplete split data!");
                      return 1;
                 }
                 var wsdata=msg[2].split(';');
@@ -485,11 +485,11 @@ module.exports = function loraParse(rawData) {
                         wslist[devID]={};
                         return replyData; 
                     } catch (error) {
-                         console.log("Erro WS2 data!");
+                         debug("Erro WS2 data!");
                          return 1;
                     }  
                 }else{
-                    console.log("Imcomplete WS2 data!");
+                    debug("Imcomplete WS2 data!");
                     return 1;
                 }
                 reportedState = {};
@@ -507,14 +507,14 @@ module.exports = function loraParse(rawData) {
                 // if(devID.indexOf('ST') > -1) {
                 //     fs.appendFile('/var/log/'+devID+'.txt', msg[2], function (err) {
                 //         if (err) return 1;
-                //         console.log('The "data to append" was appended to file!');
+                //         debug('The "data to append" was appended to file!');
                 //     });
                 // }
             }
         }
         else
         {
-            console.log("Wrong Sensor msg, the length must be 3 !-such as- devID,dataType,data !");
+            debug("Wrong Sensor msg, the length must be 3 !-such as- devID,dataType,data !");
             return 0;
         } 
 }
