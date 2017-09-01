@@ -157,10 +157,14 @@ var server = net.createServer(function(socket) {
     socket.on('end', function() {
         debug('Client disconnected.');
     });
+
+    socket.on('error', function(err){
+        debug("Error: "+err.message);
+    });
 });
 
 //Start TCP server
 server.listen(PORT, function() {
-    console.info('Server is running on port ' + PORT);
+    debug('Server is running on port ' + PORT);
 });
 
