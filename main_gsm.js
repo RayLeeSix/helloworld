@@ -87,7 +87,7 @@ lagoon.on('message', function(topic, message){
                 logto.info('Received interval message from lagoon'+message.toString()+'#T'+Date.now());
                 //if interval header with char 'I' means it a new interval
                 //thingInterval[devID] = "I"+lagoonJSON.interval;
-                loraParse(devID+","+msgType+",I"+lagoonJSON.interval);
+                loraParse(devID+","+msgType+","+lagoonJSON.interval);
         } catch (error) {
                 debug('Received erro JSON message from lagoon');
                 logto.info('Received erro JSON message from lagoon'+message.toString()+'#T'+Date.now());
