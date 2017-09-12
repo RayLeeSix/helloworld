@@ -22,6 +22,8 @@ module.exports = function loraParse(rawData) {
         }
         var msg=rawData.split(',');
         var devID=msg[0];
+
+        var replyData={};
         //add timestamp
         var timestamp=Date.parse(new Date())/1000+'';
         var reportedState = {};
@@ -72,7 +74,7 @@ module.exports = function loraParse(rawData) {
                     var thingtmpInterval=replaceAt(thingInterval[devID],0,'I');
                     var replyData=Buffer(thingtmpInterval).toString('hex');
                     debug("Maybe node reboot,Send interval data!"+replyData);
-                    var replyData={};
+                    
                     replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                     debug("Send interval data!"+JSON.stringify(replyData));
                     return replyData;
@@ -91,7 +93,6 @@ module.exports = function loraParse(rawData) {
                         return 1;
                     }
 
-                    var replyData={};
                     replyData["CHNL"]="things/"+devID+"/interval_confirm";
                     replyData["MQTT"]=reportedState;
                     return replyData;
@@ -105,7 +106,7 @@ module.exports = function loraParse(rawData) {
                 reportedState["co2interval"] = msg[2];
                 reportedState["interval"] = thingInterval[devID];
 
-                var replyData={};
+                
                 replyData["CHNL"]="things/"+devID+"/co2interval_confirm";
                 replyData["MQTT"]=reportedState;
                 return replyData;
@@ -115,7 +116,7 @@ module.exports = function loraParse(rawData) {
         if (thingInterval[devID].charAt(0)!='0') {
                 // if reported interval has been updated, send the new interval back to mDot
                 // header for replying interval back to Dot is 'I'  
-                var replyData={};
+                
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                 debug("Send interval data!"+JSON.stringify(replyData));
                 return replyData;
@@ -124,7 +125,7 @@ module.exports = function loraParse(rawData) {
         //if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
         if (thingCo2Interval[devID].charAt(0)!='0') {
                 // header for replying CO2 interval back to Dot is 'C'
-                var replyData={};
+                
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                 debug("Send CO2 interval data!"+JSON.stringify(replyData));
                 return replyData;
@@ -148,7 +149,7 @@ module.exports = function loraParse(rawData) {
                         lagoonJSON= {};
                         return 1;
                 }    
-                var replyData={};
+                
                 replyData["MACK"]="interval_request";
                 return replyData;
             }
@@ -164,7 +165,7 @@ module.exports = function loraParse(rawData) {
                         lagoonJSON= {};
                         return 1;
                 }    
-                var replyData={};
+                
                 replyData["MACK"]="co2interval_request";
                 return replyData;
             }
@@ -172,7 +173,6 @@ module.exports = function loraParse(rawData) {
             {
                 reportedState["battery"] = msg[2];
 
-                var replyData={};
                 replyData["CHNL"]="things/"+devID+"/battery_update";
                 replyData["MQTT"]=reportedState;
                 return replyData;
@@ -217,7 +217,6 @@ module.exports = function loraParse(rawData) {
                         bdata=mapTCBat(rawvol/1000.0);
                         reportedState["battery"] = bdata;
 
-                        var replyData={};
                         replyData["CHNL"]="things/"+devID+"/battery_update";
                         replyData["MQTT"]=reportedState;
                         return replyData;
@@ -230,7 +229,6 @@ module.exports = function loraParse(rawData) {
             {      
                 reportedState["boot"] = msg[2];
 
-                var replyData={};
                 replyData["CHNL"]="things/"+devID+"/boot";
                 replyData["MQTT"]=reportedState;
                 return replyData;
@@ -239,7 +237,6 @@ module.exports = function loraParse(rawData) {
             {
                 reportedState["last_will"] = msg[2];
                 
-                var replyData={};
                 replyData["CHNL"]="things/"+devID+"/last_will";
                 replyData["MQTT"]=reportedState;
                 return replyData;
@@ -264,7 +261,6 @@ module.exports = function loraParse(rawData) {
                     reportedState["lat"] = lat.toFixed(4)+"";//(parseFloat(gpsdata[0])/100).toFixed(4);
                     reportedState["lon"] = lon.toFixed(4)+"";//(parseFloat(gpsdata[2])/100).toFixed(4);
 
-                    var replyData={};
                     replyData["CHNL"]="things/"+devID+"/location";
                     replyData["MQTT"]=reportedState;
                     return replyData;
@@ -287,7 +283,6 @@ module.exports = function loraParse(rawData) {
                 {
                     if(stedTimeList[devID]["current"]!==parseInt(steddata[0])){
                         //debug("another time's sted msg:"+stedTimeList[devID]["current"]);
-                        var replyData={};
                         replyData["CHNL"]="things/"+devID+"/reading";
                         replyData["MQTT"]=stedlist[devID];
                         stedTimeList[devID]["current"]=parseInt(steddata[0]);
@@ -374,7 +369,6 @@ module.exports = function loraParse(rawData) {
                 if(tmp > -50 && tmp < 100)
                     reportedState["soil_temperature"] =tcdata[3];
 
-                var replyData={};
                 replyData["CHNL"]="things/"+devID+"/reading";
                 replyData["MQTT"]=reportedState;
                 return replyData;     
@@ -419,7 +413,6 @@ module.exports = function loraParse(rawData) {
              
                     wslist[devID]['timestamp']=timestamp;
 
-                    var replyData={};
                     replyData["CHNL"]="things/"+devID+"/reading";
                     replyData["MQTT"]=wslist[devID];
                     wslist[devID]={};
@@ -481,7 +474,7 @@ module.exports = function loraParse(rawData) {
 
                         wslist[devID]['timestamp']=timestamp;
 
-                        var replyData={};
+
                         replyData["CHNL"]="things/"+devID+"/reading";
                         replyData["MQTT"]=wslist[devID];
                         wslist[devID]={};
@@ -501,7 +494,7 @@ module.exports = function loraParse(rawData) {
             {
                 reportedState["reading"] = {};
                 reportedState["reading"][msg[1]]=msg[2];
-                var replyData={};
+
                 replyData["CHNL"]="things/"+devID+"/other";
                 replyData["MQTT"]=reportedState;
                 return replyData; 
