@@ -72,15 +72,13 @@ module.exports = function loraParse(rawData) {
                 debug("Got interval confirm data!");
                 if(parseInt(replaceAt(thingInterval[devID],0,'0'))!=parseInt(msg[2])){
                     var thingtmpInterval=replaceAt(thingInterval[devID],0,'I');
-                    var replyData=Buffer(thingtmpInterval).toString('hex');
-                    debug("Maybe node reboot,Send interval data!"+replyData);
+                    var tempdata=Buffer(thingtmpInterval).toString('hex');
+                    debug("Maybe node reboot,Send interval data!"+tempdata);
                     
                     replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                     debug("Send interval data!"+JSON.stringify(replyData));
                     return replyData;
                 }else{
-                    var replyData=Buffer('I'+ msg[2]).toString('hex');
-
                     thingInterval[devID]='0'+ msg[2];
                     reportedState["interval"] = msg[2];
                     try {
