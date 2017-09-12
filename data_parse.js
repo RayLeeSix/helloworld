@@ -120,7 +120,9 @@ module.exports = function loraParse(rawData) {
                 debug("Send interval data!"+JSON.stringify(replyData));
                 return replyData;
         }
-        if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
+        //for TC to set co2 reading interval for WS&ST to request a GPS location info
+        //if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
+        if (thingCo2Interval[devID].charAt(0)!='0') {
                 // header for replying CO2 interval back to Dot is 'C'
                 var replyData={};
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
