@@ -37,6 +37,7 @@ module.exports = function loraParse(rawData) {
                 //var replyData=Buffer("I1800").toString('base64');
                 //sendToNode(eui, replyData);
                 thingInterval[devID]='01800';
+                thingCo2Interval[devID]='02';
                 if(devID.indexOf('ST') > -1) {
                     stedTimeList[devID]={};
                     stedlist[devID] = {
@@ -62,7 +63,6 @@ module.exports = function loraParse(rawData) {
                     TCBat[devID]["a2"]=0;
                     TCBat[devID]["a3"]=0;
                     TCBat[devID]["boot"]=1;
-                    thingCo2Interval[devID]='02';
                 }
         }
         
