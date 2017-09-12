@@ -80,7 +80,7 @@ module.exports = function loraParse(rawData) {
                     return replyData;
                 }else{
                     var replyData=Buffer('I'+ msg[2]).toString('hex');
-                    //sendToNode(eui, replyData);
+
                     thingInterval[devID]='0'+ msg[2];
                     reportedState["interval"] = msg[2];
                     try {
@@ -119,7 +119,7 @@ module.exports = function loraParse(rawData) {
                 
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                 debug("Send interval data!"+JSON.stringify(replyData));
-                return replyData;
+                //return replyData;
         }
         //for TC to set co2 reading interval for WS&ST to request a GPS location info
         //if (devID.indexOf('TC') > -1 && thingCo2Interval[devID].charAt(0)!='0') {
@@ -128,7 +128,7 @@ module.exports = function loraParse(rawData) {
                 
                 replyData["NODE"]=Buffer(thingInterval[devID]).toString();
                 debug("Send CO2 interval data!"+JSON.stringify(replyData));
-                return replyData;
+                //return replyData;
         }  
 
         //update devicei's latest up date timestamp 
