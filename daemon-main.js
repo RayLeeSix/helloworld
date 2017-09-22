@@ -23,7 +23,7 @@ try {
 var gatewayinfo={};
 gatewayinfo["GW_ID"]=GWID;
 
-var lagoon = mqtt.connect(lagoonURL, {username: 'pastoral', password: 'pastoralkicksass'});
+var lagoon = mqtt.connect(lagoonURL, {username: 'pastoral', password: 'pastoral'});
 
 lagoon.on('connect', function(){
   gatewayinfo["daemon_online"]="true";	
