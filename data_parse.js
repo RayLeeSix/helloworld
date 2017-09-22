@@ -104,7 +104,6 @@ module.exports = function loraParse(rawData) {
                 reportedState["co2interval"] = msg[2];
                 reportedState["interval"] = thingInterval[devID];
 
-                
                 replyData["CHNL"]="things/"+devID+"/co2interval_confirm";
                 replyData["MQTT"]=reportedState;
                 return replyData;
