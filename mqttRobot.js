@@ -6,7 +6,7 @@ var net = require('net')
 
 var lagoonURL = "mqtt://101.200.34.179";
 var lagoonUser="pastoral";
-var	lagoonPwd="pastoralkicksass";
+var	lagoonPwd="pastoral";
 var	rebootPwd="cleansiphonageass";
 var LOG_FILE = './log/siphonage.log';
 var GWID="GW_MQROBOT";
