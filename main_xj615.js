@@ -48,7 +48,7 @@ var maxInterval=0;//store max Interval to confirm weather mdot is online
 
 // subscribe to local mqtt server
 var mDotProxy  = mqtt.connect(loraURL);
-var lagoon = mqtt.connect(lagoonURL, {username: 'pastoral', password: 'pastoralkicksass'});
+var lagoon = mqtt.connect(lagoonURL, {username: 'pastoral', password: 'pastoral'});
 
 //mqtt to aliyun test block
 lagoon.on('connect', function(){
