@@ -104,6 +104,7 @@ module.exports = function loraParse(rawData) {
                 reportedState["co2interval"] = msg[2];
                 reportedState["interval"] = thingInterval[devID];
 
+                
                 replyData["CHNL"]="things/"+devID+"/co2interval_confirm";
                 replyData["MQTT"]=reportedState;
                 return replyData;
@@ -270,18 +271,22 @@ module.exports = function loraParse(rawData) {
             }
             else if (msg[1]==="ST") 
             {
+                replyData=0;
+                var stedreply={};
                 //can only handle one same devID STED data
                 if(msg[2].indexOf('#')<0){
                      debug("Imcomplete split data!");
-                     return 1;
+                     return replyData;
                 }
                 var steddata=msg[2].split('#');
                 if(stedTimeList[devID]["current"]!=1)
                 {
-                    if(stedTimeList[devID]["current"]!==parseInt(steddata[0])){
-                        //debug("another time's sted msg:"+stedTimeList[devID]["current"]);
-                        replyData["CHNL"]="things/"+devID+"/reading";
-                        replyData["MQTT"]=stedlist[devID];
+                    if(stedTimeList[devID]["current"] !== parseInt(steddata[0])){
+                        debug("another time's sted msg:"+stedTimeList[devID]["current"]);
+                        
+                        replyData=1;
+                        stedreply["CHNL"]="things/"+devID+"/reading";
+                        stedreply["MQTT"]=stedlist[devID];
                         stedTimeList[devID]["current"]=parseInt(steddata[0]);
                         stedlist[devID] = {
                             20:null,
@@ -294,18 +299,24 @@ module.exports = function loraParse(rawData) {
                             160:null,
                             timestamp:'0'
                         };
-                        return replyData; 
+                        stedlist[devID]["timestamp"]=timestamp;
+                        //return replyData; 
                     } 
                 }
                 else
                 {
+                    debug("sted msg!");
                     stedTimeList[devID]["current"]=parseInt(steddata[0]);
+                    stedlist[devID]["timestamp"]=timestamp;
                 }
 
                 if(steddata[1].indexOf('/')<0)
                 {
                      debug("Imcomplete split data!");
-                     return 1;
+                    if(replyData === 1)
+                        return stedreply;
+                    else
+                        return replyData;
                 }
 
                 var signalpart=steddata[1].split('/');
@@ -318,14 +329,20 @@ module.exports = function loraParse(rawData) {
                         stedlist[devID][parseInt(signalpart[0])+'']["soil_conductivity"]=parseInt(signalpart[3])+"";
                     } catch (error) {
                         debug("Imcomplete STED data!");
-                        return 1;
+                        if(replyData === 1)
+                            return stedreply;
+                        else
+                            return replyData;
                     }
                 }
-                return 0;
+                if(replyData === 1)
+                    return stedreply;
+                else
+                    return replyData;
             }
             else if (msg[1]==="TC") 
             {
-                if(msg[2].indexOf(';')<0 | msg[2].split(';').length!= 4){
+                if(msg[2].indexOf(';')<0 | msg[2].split(';').length < 4){
                      debug("Imcomplete split data!");
                      return 1;
                 }
@@ -365,7 +382,9 @@ module.exports = function loraParse(rawData) {
                 tmp=tmp.toFixed(2);
                 if(tmp > -50 && tmp < 100)
                     reportedState["soil_temperature"] =tcdata[3];
-
+                if(tcdata.length==5)
+                    reportedState["lux"] =tcdata[4];
+                
                 replyData["CHNL"]="things/"+devID+"/reading";
                 replyData["MQTT"]=reportedState;
                 return replyData;     
